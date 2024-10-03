@@ -1,11 +1,34 @@
 section .data
-    filename db "uppercase", 0
-    elf db 0x7F, 'E', 'L', 'F'
-    buffer times 4 db 0
-    len equ 4
+    flags dq 2      ; 0_RDWR
+    mode dq 0666    ; r/w permissions for user, group and others
 
+    ; File to open
+    filename db "adfzdaz", 0
+    
+    ; Buffer to check if there's a ELF header
+    elfbuf_len equ 4
+    elfbuf times elfbuf_len db 0
+
+    ; Buffer to check if it is a directory
+    statbuf_len equ 256
+    statbuf times statbuf_len db 0
+
+    ; Messages
+    elf_msg db "This file has a ELF header.", 10
+    elf_len equ $ - elf_msg
+
+    ; Error messages
     not_elf_msg db "This file does not have a ELF header.", 10
     not_elf_len equ $ - not_elf_msg
+
+    is_dir_msg db "The provided file is a directory.", 10
+    is_dir_len equ $ - is_dir_msg
+
+    miss_msg db "The provided file does not exist.", 10
+    miss_len equ $ - miss_msg
+
+section .bss
+    fd resq 1   ; Reserve space for the file descriptor
 
 section .text
     global _start
@@ -14,22 +37,87 @@ _start:
     ; Open the file
     mov rax, 2
     mov rdi, filename
-    mov rsi, 0          ; O_RDONLY (read-only)
+    mov rsi, [flags]
+    mov rdx, [mode]
     syscall
-    mov rdi, rax        ; file descriptor
+    mov [fd], rax        ; file descriptor
 
     ; Read the file contents
     mov rax, 0          
-    mov rsi, buffer
-    mov rdx, len
+    mov rdi, [fd]
+    mov rsi, elfbuf
+    mov rdx, elfbuf_len
     syscall
 
-    ; Check if it has a ELF header
-    mov rdi, buffer
-    mov ri, elf        
-    mov rcx, 4         
-    repe cmpsb          
+    ; Check if it is a directory
+    jmp check_dir
+
+check_dir:
+    ; Depending on the file descriptor LSB, we know if it's a file, a directory or a missing file
+    ; File's LSB is 3, directory's is B and missing file's is E
+    mov rdi, [fd]
+    and rdi, 0xF        ; Get the LSB
+
+    cmp rdi, 0xB        ; Check if it is a directory
+    je is_dir
+
+    cmp rdi, 0xE        ; Check if it is a missing file
+    je missing_file
+
+    ; If it is not a directory, check if it is an ELF file
+    jmp check_elf
+
+check_elf:
+    ; Check for leading characters of a file with an ELF header
+    mov rsi, elfbuf
+    mov al, [rsi]
+    cmp al, 0x7F
     jne not_elf
+
+    inc rsi
+    mov al, [rsi]
+    cmp al, 'E'
+    jne not_elf
+
+    inc rsi
+    mov al, [rsi]
+    cmp al, 'L'
+    jne not_elf
+
+    inc rsi
+    mov al, [rsi]
+    cmp al, 'F'
+    jne not_elf
+
+    jmp is_elf
+
+is_dir:
+    ; Display an error message
+    mov rax, 1          
+    mov rdi, 1
+    mov rsi, is_dir_msg
+    mov rdx, is_dir_len
+    syscall
+
+    jmp close
+
+missing_file:
+    ; Display an error message
+    mov rax, 1          
+    mov rdi, 1
+    mov rsi, miss_msg
+    mov rdx, miss_len
+    syscall
+
+    jmp close
+
+is_elf:
+    ; Display a message
+    mov rax, 1          
+    mov rdi, 1
+    mov rsi, elf_msg
+    mov rdx, elf_len
+    syscall
 
     jmp close
 
@@ -44,8 +132,9 @@ not_elf:
     jmp close
 
 close:
-    ; Close the file
+    ; Close the file and exit
     mov rax, 3
+    mov rdi, [fd]
     syscall
 
     mov rax, 60
