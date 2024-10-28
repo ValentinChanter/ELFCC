@@ -146,7 +146,7 @@ missing_file:
     jmp close
 
 is_elf:
-    ; Display a message
+    ; Display ELF header message
     mov rax, 1          
     mov rdi, 1
     mov rsi, elf_msg
