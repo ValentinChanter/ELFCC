@@ -1,3 +1,5 @@
+%include "print_hex.asm"
+
 section .data
     flags dq 2      ; 0_RDWR
     mode dq 0666    ; r/w permissions for user, group and others
