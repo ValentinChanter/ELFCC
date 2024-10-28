@@ -5,7 +5,7 @@ section .data
     mode dq 0666    ; r/w permissions for user, group and others
 
     ; File to open
-    filename db "adfzdaz", 0
+    filename db "uppercase", 0
     
     ; Buffer to retrieve the ELF header
     buffer_len equ 640
