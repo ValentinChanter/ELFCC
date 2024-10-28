@@ -28,7 +28,60 @@ section .data
 
     newline db 10
     ; ELF header fields
-
+    ei_class_msg db "ei_class = ", 0
+    ei_class_msg_len equ $ - ei_class_msg
+    ei_class_len equ 1
+    ei_data_msg db "ei_data = ", 0
+    ei_data_msg_len equ $ - ei_data_msg
+    ei_data_len equ 1
+    ei_version_msg db "ei_version = ", 0
+    ei_version_msg_len equ $ - ei_version_msg
+    ei_version_len equ 1
+    ei_osabi_msg db "ei_osabi = ", 0
+    ei_osabi_msg_len equ $ - ei_osabi_msg
+    ei_osabi_len equ 1
+    ei_osabi_version_msg db "ei_osabi_version = ", 0
+    ei_osabi_version_msg_len equ $ - ei_osabi_version_msg
+    ei_osabi_version_len equ 2
+    e_type_msg db "e_type = ", 0
+    e_type_msg_len equ $ - e_type_msg
+    e_type_len equ 2
+    e_machine_msg db "e_machine = ", 0
+    e_machine_msg_len equ $ - e_machine_msg
+    e_machine_len equ 2
+    e_version_msg db "e_version = ", 0
+    e_version_msg_len equ $ - e_version_msg
+    e_version_len equ 4
+    e_entry_msg db "e_entry = ", 0
+    e_entry_msg_len equ $ - e_entry_msg
+    e_entry_len equ 8
+    e_phoff_msg db "e_phoff = ", 0
+    e_phoff_msg_len equ $ - e_phoff_msg
+    e_phoff_len equ 8
+    e_shoff_msg db "e_shoff = ", 0
+    e_shoff_msg_len equ $ - e_shoff_msg
+    e_shoff_len equ 8
+    e_flags_msg db "e_flags = ", 0
+    e_flags_msg_len equ $ - e_flags_msg
+    e_flags_len equ 4
+    e_ehsize_msg db "e_ehsize = ", 0
+    e_ehsize_msg_len equ $ - e_ehsize_msg
+    e_ehsize_len equ 2
+    e_phentsize_msg db "e_phentsize = ", 0
+    e_phentsize_msg_len equ $ - e_phentsize_msg
+    e_phentsize_len equ 2
+    e_phnum_msg db "e_phnum = ", 0
+    e_phnum_msg_len equ $ - e_phnum_msg
+    e_phnum_len equ 2
+    e_shentsize_msg db "e_shentsize = ", 0
+    e_shentsize_msg_len equ $ - e_shentsize_msg
+    e_shentsize_len equ 2
+    e_shnum_msg db "e_shnum = ", 0
+    e_shnum_msg_len equ $ - e_shnum_msg
+    e_shnum_len equ 2
+    e_shstrndx_msg db "e_shstrndx = ", 0
+    e_shstrndx_msg_len equ $ - e_shstrndx_msg
+    e_shstrndx_len equ 2
 
     ; Program header fields
     p_type_msg db "p_type = ", 0
@@ -153,9 +206,205 @@ is_elf:
     mov rdx, elf_len
     syscall
 
-    jmp parse_program_header
+    jmp parse_elf_header
 
-parse_program_header:
+print_newline:
+    ; Display a newline
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, newline
+    mov rdx, 1
+    syscall
+
+    ret
+
+; Print a program header field
+; Move the newly added offset to r10, the length of the hex value to r8, the message to display in rsi and its length in rdx before calling
+print_field:
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    add [offset_counter], r10
+
+    mov rsi, buffer             ; Set rsi to the beginning
+    add rsi, rbx                ; Added offset when using print_field to print program header fields
+    add rsi, [offset_counter]   ; Get the field
+
+    cmp r8, 2
+    je print_field_2
+
+    cmp r8, 4
+    je print_field_4
+
+    cmp r8, 8
+    je print_field_8
+
+    jmp print_field_16
+
+; Depending on the size of the field, we move the hex value to the register of the corresponding size
+print_field_2:
+    mov dl, [rsi]
+    jmp print_field_end
+
+print_field_4:
+    mov dx, [rsi]
+    jmp print_field_end
+
+print_field_8:
+    mov edx, [rsi]
+    jmp print_field_end
+
+print_field_16:
+    mov rdx, [rsi] 
+    jmp print_field_end
+
+print_field_end:
+    call print_hex
+    call print_newline
+
+    ret
+
+parse_elf_header:
+    xor rbx, rbx
+    mov rcx, 4
+    mov [offset_counter], rcx
+
+    ; Display ei_class
+    mov rsi, ei_class_msg
+    mov rdx, ei_class_msg_len
+    xor r10, r10 ; Call with an offset of 0
+    mov r8, ei_class_len * 2
+    call print_field
+
+    ; Display ei_data
+    mov rsi, ei_data_msg
+    mov rdx, ei_data_msg_len
+    mov r10, ei_class_len
+    mov r8, ei_data_len * 2
+    call print_field
+
+    ; Display ei_version
+    mov rsi, ei_version_msg
+    mov rdx, ei_version_msg_len
+    mov r10, ei_data_len
+    mov r8, ei_version_len * 2
+    call print_field
+
+    ; Display ei_osabi
+    mov rsi, ei_osabi_msg
+    mov rdx, ei_osabi_msg_len
+    mov r10, ei_version_len
+    mov r8, ei_osabi_len * 2
+    call print_field
+
+    ; Display ei_osabi_version
+    mov rsi, ei_osabi_version_msg
+    mov rdx, ei_osabi_version_msg_len
+    mov r10, ei_osabi_len
+    mov r8, ei_osabi_version_len * 2
+    call print_field
+
+    mov rcx, [offset_counter]
+    add rcx, 6         ; ei_osabiver is at 0x08 and 2 long but e_type doesn't start before an offset of 0x10
+    mov [offset_counter], rcx
+
+    ; Display e_type
+    mov rsi, e_type_msg
+    mov rdx, e_type_msg_len
+    mov r10, ei_osabi_version_len
+    mov r8, e_type_len * 2
+    call print_field
+
+    ; Display e_machine
+    mov rsi, e_machine_msg
+    mov rdx, e_machine_msg_len
+    mov r10, e_type_len
+    mov r8, e_machine_len * 2
+    call print_field
+
+    ; Display e_version
+    mov rsi, e_version_msg
+    mov rdx, e_version_msg_len
+    mov r10, e_machine_len
+    mov r8, e_version_len * 2
+    call print_field
+
+    ; Display e_entry
+    mov rsi, e_entry_msg
+    mov rdx, e_entry_msg_len
+    mov r10, e_version_len
+    mov r8, e_entry_len * 2
+    call print_field
+
+    ; Display e_phoff
+    mov rsi, e_phoff_msg
+    mov rdx, e_phoff_msg_len
+    mov r10, e_entry_len
+    mov r8, e_phoff_len * 2
+    call print_field
+
+    ; Display e_shoff
+    mov rsi, e_shoff_msg
+    mov rdx, e_shoff_msg_len
+    mov r10, e_phoff_len
+    mov r8, e_shoff_len * 2
+    call print_field
+
+    ; Display e_flags
+    mov rsi, e_flags_msg
+    mov rdx, e_flags_msg_len
+    mov r10, e_shoff_len
+    mov r8, e_flags_len * 2
+    call print_field
+
+    ; Display e_ehsize
+    mov rsi, e_ehsize_msg
+    mov rdx, e_ehsize_msg_len
+    mov r10, e_flags_len
+    mov r8, e_ehsize_len * 2
+    call print_field
+
+    ; Display e_phentsize
+    mov rsi, e_phentsize_msg
+    mov rdx, e_phentsize_msg_len
+    mov r10, e_ehsize_len
+    mov r8, e_phentsize_len * 2
+    call print_field
+
+    ; Display e_phnum
+    mov rsi, e_phnum_msg
+    mov rdx, e_phnum_msg_len
+    mov r10, e_phentsize_len
+    mov r8, e_phnum_len * 2
+    call print_field
+
+    ; Display e_shentsize
+    mov rsi, e_shentsize_msg
+    mov rdx, e_shentsize_msg_len
+    mov r10, e_phnum_len
+    mov r8, e_shentsize_len * 2
+    call print_field
+
+    ; Display e_shnum
+    mov rsi, e_shnum_msg
+    mov rdx, e_shnum_msg_len
+    mov r10, e_shentsize_len
+    mov r8, e_shnum_len * 2
+    call print_field
+
+    ; Display e_shstrndx
+    mov rsi, e_shstrndx_msg
+    mov rdx, e_shstrndx_msg_len
+    mov r10, e_shnum_len
+    mov r8, e_shstrndx_len * 2
+    call print_field
+
+    call print_newline
+
+    jmp retrieve_ph_info
+
+retrieve_ph_info:
     ; Retrieve program header information
     mov rsi, buffer
     add rsi, 32         ; Move to the e_phoff field (32 bytes offset in the ELF header)
@@ -179,49 +428,6 @@ parse_program_header:
 
     mov rbx, [ph_offset]
     jmp print_program_header
-
-print_newline:
-    ; Display a newline
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, newline
-    mov rdx, 1
-    syscall
-
-    ret
-
-; Print a program header field
-; Move the newly added offset to r10, the length of the hex value to r8, the message to display in rsi and its length in rdx before calling
-print_field:
-    mov rax, 1
-    mov rdi, 1
-    syscall
-
-    mov rcx, [offset_counter]
-    add rcx, r10
-    mov [offset_counter], rcx
-
-    mov rsi, buffer             ; Set rsi to the beginning
-    add rsi, rbx                ; Add the offset to get to the first program header
-    add rsi, [offset_counter]   ; Get the field
-
-    cmp r8, 8
-    je print_field_8
-    jmp print_field_16
-
-print_field_8:
-    mov edx, [rsi]              ; Move hex value to rdx
-    jmp print_field_end
-
-print_field_16:
-    mov rdx, [rsi]              ; Move hex value to rdx
-    jmp print_field_end
-
-print_field_end:
-    call print_hex
-    call print_newline
-
-    ret
 
 print_program_header:
     mov [loop_counter], rcx
