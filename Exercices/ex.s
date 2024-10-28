@@ -7,13 +7,9 @@ section .data
     ; File to open
     filename db "adfzdaz", 0
     
-    ; Buffer to check if there's a ELF header
-    elfbuf_len equ 4
-    elfbuf times elfbuf_len db 0
-
-    ; Buffer to check if it is a directory
-    statbuf_len equ 256
-    statbuf times statbuf_len db 0
+    ; Buffer to retrieve the ELF header
+    buffer_len equ 640
+    buffer times buffer_len db 0
 
     ; Messages
     elf_msg db "This file has a ELF header.", 10
