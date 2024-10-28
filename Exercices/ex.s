@@ -79,8 +79,8 @@ _start:
     ; Read the file contents
     mov rax, 0          
     mov rdi, [fd]
-    mov rsi, elfbuf
-    mov rdx, elfbuf_len
+    mov rsi, buffer
+    mov rdx, buffer_len
     syscall
 
     ; Check if it is a directory
@@ -103,7 +103,7 @@ check_dir:
 
 check_elf:
     ; Check for leading characters of a file with an ELF header
-    mov rsi, elfbuf
+    mov rsi, buffer
     mov al, [rsi]
     cmp al, 0x7F
     jne not_elf
