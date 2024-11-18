@@ -502,7 +502,7 @@ print_program_header:
 
 not_elf:
     ; Display an error message
-    mov rax, 1          
+    mov rax, 1
     mov rdi, 1
     mov rsi, not_elf_msg
     mov rdx, not_elf_len
