@@ -3,7 +3,7 @@ section .data
     mode dq 0666    ; r/w permissions for user, group and others
 
     ; File to open
-    filename db "cat", 0
+    filename db "hello", 0
 
     ; Buffer to retrieve the ELF header
     buffer_len equ 262144       ; Not very efficient, but heh I can't find a better way (for now). If it works that way already it'd be very great
