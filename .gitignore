@@ -1,9 +1,11 @@
 Exercices/.gdb_history
 .gdb_history
 
-cat
-hello
+cat*
+hello*
 *_clean*
+*test*
 
 *.c
 *.o
+*.bak*
