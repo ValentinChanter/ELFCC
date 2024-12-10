@@ -6,7 +6,7 @@ section .data
     filename db "hello", 0
 
     ; Buffer to retrieve the ELF header
-    buffer_len equ 262144       ; Not very efficient, but heh I can't find a better way (for now). If it works that way already it'd be very great
+    buffer_len equ 4096       ; Assuming a PT_NOTE is present and is within the first 4096 bytes
     buffer times buffer_len db 0
 
     ; Messages
