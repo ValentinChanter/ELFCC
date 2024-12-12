@@ -7,11 +7,11 @@ section .data
     buffer times buffer_len db 0
 
     ; Messages
-    elf_msg db "This file has a ELF header.", 10
+    elf_msg db "The provided file has a ELF header.", 10
     elf_len equ $ - elf_msg
 
     ; Error messages
-    not_elf_msg db "This file does not have a ELF header.", 10
+    not_elf_msg db "The provided file does not have a ELF header.", 10
     not_elf_len equ $ - not_elf_msg
 
     is_dir_msg db "The provided file is a directory.", 10
