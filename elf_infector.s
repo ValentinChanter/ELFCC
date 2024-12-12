@@ -2,9 +2,6 @@ section .data
     flags dq 2      ; 0_RDWR
     mode dq 0666    ; r/w permissions for user, group and others
 
-    ; File to open
-    filename db "hello", 0
-
     ; Buffer to retrieve the ELF header
     buffer_len equ 4096       ; Assuming a PT_NOTE is present and is within the first 4096 bytes
     buffer times buffer_len db 0
@@ -98,7 +95,7 @@ section .text
 _start:
     ; Open the file
     mov rax, 2
-    mov rdi, filename
+    mov rdi, [rsp + 16] ; rsp + 16 is argv[1]
     mov rsi, [flags]
     mov rdx, [mode]
     syscall
