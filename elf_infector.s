@@ -14,6 +14,9 @@ section .data
     not_elf_msg db "The provided file does not have a ELF header.", 10
     not_elf_len equ $ - not_elf_msg
 
+    no_pt_note_msg db "The provided file does not have a PT_NOTE segment.", 10
+    no_pt_note_len equ $ - no_pt_note_msg
+
     is_dir_msg db "The provided file is a directory.", 10
     is_dir_len equ $ - is_dir_msg
 
@@ -238,6 +241,15 @@ next_ph:
     dec rcx
     mov [loop_counter], rcx
     jnz search_pt_note
+
+    jmp no_pt_note
+
+no_pt_note:
+    mov rax, 1          
+    mov rdi, 1
+    mov rsi, no_pt_note_msg
+    mov rdx, no_pt_note_len
+    syscall
 
     jmp close
 
