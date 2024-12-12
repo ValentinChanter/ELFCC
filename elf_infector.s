@@ -140,7 +140,7 @@ check_dir:
     ; If it is not a directory, check if it is an ELF file
     jmp check_elf
 
-    check_elf:
+check_elf:
     ; Check for leading characters of a file with an ELF header
     mov rsi, buffer
     mov al, [rsi]
