@@ -1,6 +1,9 @@
 Exercices/.gdb_history
 .gdb_history
 
+elf_infector
+elf_infector.o
+
 cat*
 hello*
 *_clean*
