@@ -6,6 +6,16 @@
 
 <br/>
 
+## Table of Contents
+- [Table of Contents](#table-of-contents)
+- [Introduction](#introduction)
+- [Requirements](#requirements)
+- [Usage](#usage)
+- [How it works \& challenges encountered](#how-it-works--challenges-encountered)
+  - [How it works](#how-it-works)
+  - [Challenges encountered](#challenges-encountered)
+- [References](#references)
+
 ## Introduction
 
 This program allows the user to infect a file with a ELF header and at least one PT_NOTE segment. \
