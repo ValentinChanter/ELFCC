@@ -15,8 +15,8 @@ A file that is already infected cannot be infected again.
 
 ## Requirements
 
-This program was tested and is working using nasm version 2.16.01 on Ubuntu 24.04. \
-This program was tested but is not working using nasm version 2.16.01 on Debian 12. `/tmp/outfile` is created but is empty. The binary still executes normally without crashing.
+This program was tested using nasm version 2.16.01 on Ubuntu 24.04. \
+When I tried to test the program on Debian 12, `/tmp/outfile` was created but was empty. The binary was still executing normally without crashing. This was probably due to open, read, or write permission issues and another payload should work.
 
 ## Usage
 
