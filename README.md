@@ -70,17 +70,17 @@ Additionnaly, the infector adds a 7 bytes signature 8 bytes into the ELF header 
 
 Multiple challenges were encountered while trying to develop this program. Below is a non-exhaustive list with the solutions if applicable.
 
-- Around the start it was hard knowing if the file was successfully modified or not, but I ended up abusing `sha256sum` to check it.
+- Around the start it was time-consuming checking if the header was successfully modified or not, but I ended up abusing `sha256sum` to do a first check, before checking more thoroughly.
 - When I was trying to append a payload it would not execute. I tried tracing execution with gdb but I couldn't place breakpoints inside the payload.
 - At some point I was stuck not knowing what to append at the end of the file but I ended up going for raw bytecode array. I would write the payload in a test `.s` file, compile it, and run `objdump -d -M x86-64` on it to copy the bytecode array.
 - I got stuck trying to understand how to properly jump at the end of the payload. At first I tried doing `mov rax, [old_e_entry]` followed by `FF E0` (`jmp rax`) but it was not working. \
 I ended up using `E9` (relative `jmp` instead of absolute) and manually computed the destination address.
-- The first payload I used to test was one executing `/bin/sh` so it was working but I couldn't get back to the normal execution afterward. \
-When I tried using another payload it would crash with a segmentation fault, meaning my `jmp` at the end was still broken.
-- `b _start` in gdb was not helping because I couldn't break during the payload execution. To solve this, I had to purposefully write broken bytecode to provoke a crash, that would let gdb show the lines around the crash. \
+- The first payload I used to test my program was one executing `/bin/sh`, but I couldn't know if it was successfully resuming the normal execution afterward. \
+When I tried using another payload it would crash with a segmentation fault, meaning my `jmp` at the end was still broken. \
+- `b _start` in gdb was not helping because I couldn't break during the payload execution. To solve this, I had to purposefully write broken bytecode to provoke a crash inside the payload, that would let gdb show the lines around the crash. \
 This helped me confirm that my `jmp` was indeed broken (both when I tried absolute at first, then relative).
 - Even when I got the right `jmp` at the end of the payload, the program would resume normal execution, then crash at the first `pop rsi` or at the last instruction. This was likely due to the payload messing too much with the registers and the stack. \
-To fix this, I pushed every used register used and gave the payload some space by substracting 0x1000 to `rsp`, before adding it back right before popping the registers.
+To fix this, I pushed every used register and gave the payload some space by substracting 0x1000 to `rsp`, before adding it back right before popping the registers.
 
 ## References
 
