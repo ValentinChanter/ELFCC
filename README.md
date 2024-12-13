@@ -9,13 +9,15 @@
 ## Introduction
 
 This program allows the user to infect a file with a ELF header and at least one PT_NOTE segment. \
-It copies the content of `/etc/passwd` into `/tmp/outfile` and resumes the normal execution of the infected file. \
+It copies the content of `/etc/passwd` into `/tmp/outfile` and resumes the normal execution of the infected file.
+
 The user must have read/write permission on the file to infect or the program will consider that it is not ELF. \
 A file that is already infected cannot be infected again.
 
 ## Requirements
 
-This program was tested using nasm version 2.16.01 on Ubuntu 24.04. \
+This program was tested using nasm version 2.16.01 on Ubuntu 24.04.
+
 When I tried to test the program on Debian 12, `/tmp/outfile` was created but was empty. The binary was still executing normally without crashing. This was probably due to open, read, or write permission issues and another payload should work.
 
 ## Usage
@@ -49,7 +51,9 @@ When I tried to test the program on Debian 12, `/tmp/outfile` was created but wa
 
 ### How it works
 
-The infection works by using the presence of PT_NOTE segment(s) in most binaries with a ELF header. Changing them doesn't alter the program execution, thus allowing us to change it to a PT_LOAD segment. Then, we'll modify the binary to first execute the injected payload. This won't cause any crash because the newly modified PT_LOAD segment will make the binary think that it is part of a regular execution. \
+The infection works by using the presence of PT_NOTE segment(s) in most binaries with a ELF header. Changing them doesn't alter the program execution, thus allowing us to change it to a PT_LOAD segment. \
+Then, we'll modify the binary to first execute the injected payload. This won't cause any crash because the newly modified PT_LOAD segment will make the binary think that it is part of a regular execution.
+
 Afterwards, we give control back to the normal execution. To do that, we need to jump to the original entry point after our payload is executed.
 
 Overall, these steps are effectively achieved by finding the first PT_NOTE section in the program headers of the file, then:
