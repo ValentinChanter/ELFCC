@@ -49,21 +49,22 @@ When I tried to test the program on Debian 12, `/tmp/outfile` was created but wa
 
 ### How it works
 
-The program works by going through the program headers until a note section (PT_NOTE) is found. Then the program:
+The infection works by using the presence of PT_NOTE segment(s) in most binaries with a ELF header. Changing them doesn't alter the program execution, thus allowing us to change it to a PT_LOAD segment. Then, we'll modify the binary to first execute the injected payload. This won't cause any crash because the newly modified PT_LOAD segment will make the binary think that it is part of a regular execution. \
+Afterwards, we give control back to the normal execution. To do that, we need to jump to the original entry point after our payload is executed.
 
-- changes P_TYPE from PT_NOTE (4) to PT_LOAD (1)
-- changes P_FLAGS to Execute|Read (5)
-- changes P_OFFSET to the end of the file
-- changes P_VADDR to 0xF0000 + the size of the file
-- adds the size of the payload to P_FILESZ and P_MEMSZ
-- changes P_ALIGN to 0x1000
-- adds a signature 8 bytes into the ELF header to avoid double infection
-- changes E_ENTRY to the new P_VADDR
-- appends a payload at the end of the file that jumps back to the original E_ENTRY after execution
+Overall, these steps are effectively achieved by finding the first PT_NOTE section in the program headers of the file, then:
 
-This effectively changes the original binary to first execute the added payload at the end of code, as it believes it's a section that needs to be loaded before running the binary. \
-The payload ends with a `jmp` that goes to the start of the normal execution of the binary. It is calculated and written right before the payload is written at the end of the file. \
-Arguments passed to the infected binary should still work during the normal execution.
+- changing P_TYPE from PT_NOTE (4) to PT_LOAD (1)
+- changing P_FLAGS to Execute|Read (5)
+- changing P_OFFSET to the end of the file
+- changing P_VADDR to 0xF0000 + the size of the file
+- adding the size of the payload to P_FILESZ and P_MEMSZ
+- changing P_ALIGN to 0x1000 (this is optional as it will still work without it)
+- changing E_ENTRY to the new P_VADDR
+- appending a payload at the end of the file that jumps back to the original E_ENTRY after execution
+
+Arguments passed to the infected binary should still work during the normal execution. \
+Additionnaly, the infector adds a 7 bytes signature 8 bytes into the ELF header to mark it as infected already.
 
 ### Challenges encountered
 
