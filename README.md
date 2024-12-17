@@ -28,8 +28,6 @@ A file that is already infected cannot be infected again.
 
 This program was tested using nasm version 2.16.01 on Ubuntu 24.04 and nasm version 2.15.05 on Linux Mint 21.2.
 
-When I tried to test the program on Debian 12, `/tmp/outfile` was created but was empty. The binary was still executing normally without crashing. This was probably due to open, read, or write permission issues and another payload not requiring such permission should work.
-
 ## Usage
 
 1. Clone this repo and access it
@@ -95,6 +93,7 @@ When I tried using another payload it would crash with a segmentation fault, mea
 This helped me confirm that my `jmp` was indeed broken (both when I tried absolute at first, then relative).
 - Even when I got the right `jmp` at the end of the payload, the program would resume normal execution, then crash at the first `pop rsi` or at the last instruction. This was likely due to the payload messing too much with the registers and the stack. \
 To fix this, I pushed every used register and gave the payload some space by substracting 0x1000 to `rsp`, before adding it back right before popping the registers.
+- I tried to test the program on Debian 12. `/tmp/outfile` was created but was empty. The binary was still executing normally without crashing. This was probably due to open, read, or write permission issues and another payload not requiring such permission should work. I tried using sudo but this didn't make any difference.
 
 ## References
 
