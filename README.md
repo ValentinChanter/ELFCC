@@ -88,7 +88,7 @@ Multiple challenges were encountered while trying to develop this program. Below
 - I got stuck trying to understand how to properly jump at the end of the payload. At first I tried doing `mov rax, [old_e_entry]` followed by `FF E0` (`jmp rax`) but it was not working. \
 I ended up using `E9` (relative `jmp` instead of absolute) and manually computed the destination address.
 - The first payload I used to test my program was one executing `/bin/sh`, but I couldn't know if it was successfully resuming the normal execution afterward. \
-When I tried using another payload it would crash with a segmentation fault, meaning my `jmp` at the end was still broken. \
+When I tried using another payload it would crash with a segmentation fault, meaning my `jmp` at the end was still broken.
 - `b _start` in gdb was not helping because I couldn't break during the payload execution. To solve this, I had to purposefully write broken bytecode to provoke a crash inside the payload, that would let gdb show the lines around the crash. \
 This helped me confirm that my `jmp` was indeed broken (both when I tried absolute at first, then relative).
 - Even when I got the right `jmp` at the end of the payload, the program would resume normal execution, then crash at the first `pop rsi` or at the last instruction. This was likely due to the payload messing too much with the registers and the stack. \
