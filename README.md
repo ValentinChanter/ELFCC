@@ -32,16 +32,16 @@ This program was tested using nasm version 2.16.01 on Ubuntu 24.04 and nasm vers
 
 1. Clone this repo and access it
 
-	```bash
-	git clone https://github.com/ValentinChanter/ELFCC
-	cd ELFCC
-	```
+    ```bash
+    git clone https://github.com/ValentinChanter/ELFCC
+    cd ELFCC
+    ```
 
 2. Compile the assembly program
 
-	```bash
-	nasm -f elf64 -o elf_infector.o elf_infector.s && ld -g -o elf_infector elf_infector.o
-	```
+    ```bash
+    nasm -f elf64 -o elf_infector.o elf_infector.s && ld -g -o elf_infector elf_infector.o
+    ```
 
 3. Add execution permission on the file if needed
 
